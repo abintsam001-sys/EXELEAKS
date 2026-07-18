@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Under Maintenance</title>
+<meta name="description" content="We're currently performing scheduled maintenance. We'll be back shortly.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+<style>
+  :root{
+    --bg:#05070d;
+    --bg-2:#0a0f1c;
+    --panel:#0d1424;
+    --border:rgba(120,170,255,0.14);
+    --accent:#ad5eea;
+    --accent-2:#d37cff;
+    --text:#e8edf7;
+    --muted:#8a93a8;
+    --glow:rgba(206, 94, 234, 0.35);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html,body{
+    height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    overflow:hidden;
+  }
+
+  body{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:24px;
+  }
+
+  /* Background layers */
+  #bg-canvas{
+    position:fixed;
+    inset:0;
+    z-index:0;
+  }
+
+  .bg-gradient{
+    position:fixed;
+    inset:0;
+    z-index:1;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(124,156,255,0.14), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(94,234,212,0.10), transparent 45%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    pointer-events:none;
+  }
+
+  .grid-overlay{
+    position:fixed;
+    inset:0;
+    z-index:2;
+    background-image:
+      linear-gradient(rgba(120,170,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,170,255,0.05) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 40%, black 40%, transparent 90%);
+    pointer-events:none;
+  }
+
+  .scanline{
+    position:fixed;
+    inset:0;
+    z-index:3;
+    pointer-events:none;
+    background:linear-gradient(180deg, transparent 0%, rgba(94,234,212,0.035) 50%, transparent 100%);
+    background-size:100% 6px;
+    opacity:0.5;
+  }
+
+  /* Main card */
+  .container{
+    position:relative;
+    z-index:5;
+    width:100%;
+    max-width:640px;
+    text-align:center;
+  }
+
+  .panel{
+    background:linear-gradient(180deg, rgba(13,20,36,0.75), rgba(9,14,26,0.75));
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:56px 44px 44px;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.02) inset,
+      0 30px 80px -20px rgba(0,0,0,0.6),
+      0 0 90px -30px var(--glow);
+    animation:rise 0.9s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  @keyframes rise{
+    from{opacity:0; transform:translateY(18px) scale(.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+
+  /* Icon */
+  .icon-wrap{
+    position:relative;
+    width:96px;
+    height:96px;
+    margin:0 auto 30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .icon-ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:1px solid rgba(94,234,212,0.25);
+    animation:spin 14s linear infinite;
+  }
+  .icon-ring::before{
+    content:'';
+    position:absolute;
+    top:-1px; left:50%;
+    width:6px; height:6px;
+    background:var(--accent);
+    border-radius:50%;
+    transform:translateX(-50%);
+    box-shadow:0 0 12px 3px var(--glow);
+  }
+  .icon-ring.r2{
+    inset:14px;
+    border-color:rgba(124,156,255,0.25);
+    animation:spin 9s linear infinite reverse;
+  }
+  .icon-ring.r2::before{
+    background:var(--accent-2);
+    box-shadow:0 0 10px 3px rgba(124,156,255,0.35);
+  }
+
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .icon-core{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #e8fffb, var(--accent) 60%, #0a3b34 100%);
+    box-shadow:0 0 30px 4px var(--glow);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.12); opacity:.85; }
+  }
+
+  /* Eyebrow */
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin-bottom:18px;
+  }
+  .eyebrow .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 8px 2px var(--glow);
+    animation:blink 1.6s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+  h1{
+    font-size:clamp(28px, 5vw, 40px);
+    font-weight:700;
+    letter-spacing:-0.5px;
+    line-height:1.2;
+    margin-bottom:16px;
+    background:linear-gradient(135deg, #ffffff 20%, #b9c6e6 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  p.lead{
+    color:var(--muted);
+    font-size:15.5px;
+    line-height:1.7;
+    max-width:460px;
+    margin:0 auto 34px;
+  }
+
+  p.lead strong{ color:var(--text); font-weight:600; }
+
+  /* Progress bar */
+  .progress-wrap{
+    margin:0 auto 30px;
+    max-width:400px;
+  }
+  .progress-meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .progress-meta span.pct{ color:var(--accent); font-weight:700; letter-spacing:0.5px; }
+
+  .progress-track{
+    position:relative;
+    height:6px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.06);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .progress-fill{
+    position:absolute;
+    inset:0;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--accent-2), var(--accent));
+    box-shadow:0 0 14px 1px var(--glow);
+    transition:width 1s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-fill::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    width:40px;
+    animation:sweep 2.2s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0%{ transform:translateX(-40px); }
+    100%{ transform:translateX(320px); }
+  }
+
+  /* Countdown */
+  .countdown{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    margin-bottom:36px;
+    flex-wrap:wrap;
+  }
+  .time-block{
+    min-width:72px;
+    padding:14px 10px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    border-radius:12px;
+  }
+  .time-block .num{
+    font-size:26px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+    line-height:1;
+    margin-bottom:6px;
+  }
+  .time-block .label{
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  /* Status list */
+  .status-list{
+    text-align:left;
+    max-width:420px;
+    margin:0 auto 34px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .status-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:13.5px;
+    color:var(--muted);
+    padding:10px 14px;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.04);
+    border-radius:10px;
+  }
+  .status-item .chip{
+    width:8px;height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .chip.done{ background:var(--accent); box-shadow:0 0 8px 2px var(--glow); }
+  .chip.active{ background:var(--accent-2); box-shadow:0 0 8px 2px rgba(124,156,255,0.4); animation:blink 1.4s ease-in-out infinite; }
+  .chip.pending{ background:#3a4258; }
+  .status-item strong{ color:var(--text); font-weight:600; }
+
+  /* Footer / contact */
+  .footer-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    flex-wrap:wrap;
+    padding-top:26px;
+    border-top:1px solid var(--border);
+  }
+
+  .contact-link{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    transition:color .2s ease;
+  }
+  .contact-link:hover{ color:var(--accent); }
+  .contact-link svg{ width:15px; height:15px; opacity:.8; }
+
+  .divider-dot{
+    width:3px;height:3px;border-radius:50%;
+    background:var(--muted);
+    opacity:.5;
+  }
+
+  .brand{
+    margin-top:26px;
+    font-size:11.5px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:#4a5470;
+  }
+
+  @media (max-width:480px){
+    .panel{ padding:42px 24px 32px; border-radius:16px; }
+    .time-block{ min-width:60px; padding:10px 6px; }
+    .time-block .num{ font-size:20px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="bg-gradient"></div>
+<div class="grid-overlay"></div>
+<div class="scanline"></div>
+
+<div class="container">
+  <div class="panel">
+
+    <div class="icon-wrap">
+      <div class="icon-ring"></div>
+      <div class="icon-ring r2"></div>
+      <div class="icon-core"></div>
+    </div>
+
+    <div class="eyebrow"><span class="dot"></span> Scheduled Maintenance</div>
+
+    <h1>We're upgrading things<br/>behind the scenes</h1>
+
+    <p class="lead">
+      Our systems are temporarily offline while we roll out performance improvements
+      and new features. <strong>Thanks for your patience</strong> — we'll be back online shortly.
+    </p>
+
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span>Deployment Progress</span>
+        <span class="pct" id="pctLabel">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="countdown" id="countdown">
+      <div class="time-block"><div class="num" id="cd-h">00</div><div class="label">Hours</div></div>
+      <div class="time-block"><div class="num" id="cd-m">00</div><div class="label">Minutes</div></div>
+      <div class="time-block"><div class="num" id="cd-s">00</div><div class="label">Seconds</div></div>
+    </div>
+
+    <div class="status-list">
+      <div class="status-item"><span class="chip done"></span> Database migration <strong style="margin-left:auto;">complete</strong></div>
+      <div class="status-item"><span class="chip active"></span> Optimizing server infrastructure <strong style="margin-left:auto;">in progress</strong></div>
+      <div class="status-item"><span class="chip pending"></span> Final checks &amp; go-live <strong style="margin-left:auto;">pending</strong></div>
+    </div>
+
+    <div class="footer-row">
+      <a class="contact-link" href="https://discord.gg/DUUzFHn2x5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+        visit discord
+      </a>
+    </div>
+
+    <div class="brand">EXE LEAKS &middot;</div>
+
+  </div>
+</div>
+
+<script>
+  /* ---------- Set your target relaunch date/time here ---------- */
+  // Counts down to the next 12:00 AM (midnight) in the visitor's local time.
+  const TARGET_DATE = (() => {
+    const t = new Date();
+    t.setHours(24, 0, 0, 0); // rolls over to midnight of the next day
+    return t;
+  })();
+
+  function updateCountdown(){
+    const now = new Date();
+    let diff = Math.max(0, TARGET_DATE - now);
+
+    const h = Math.floor(diff / (1000*60*60));
+    const m = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const s = Math.floor((diff % (1000*60)) / 1000);
+
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  /* ---------- Fake-but-friendly progress bar ---------- */
+  let progress = 62; // starting point, adjust as needed
+  const fillEl = document.getElementById('progressFill');
+  const pctEl = document.getElementById('pctLabel');
+
+  function renderProgress(){
+    fillEl.style.width = progress + '%';
+    pctEl.textContent = Math.round(progress) + '%';
+  }
+  renderProgress();
+
+  setInterval(() => {
+    if (progress < 96){
+      progress += Math.random() * 0.6;
+      renderProgress();
+    }
+  }, 1800);
+
+  /* ---------- Ambient particle network background ---------- */
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COUNT = Math.min(70, Math.floor((window.innerWidth * window.innerHeight) / 18000));
+
+  function initParticles(){
+    particles = Array.from({length: COUNT}, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      r: Math.random() * 1.4 + 0.4
+    }));
+  }
+  initParticles();
+
+  function tick(){
+    ctx.clearRect(0, 0, w, h);
+
+    for (const p of particles){
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > w) p.vx *= -1;
+      if (p.y < 0 || p.y > h) p.vy *= -1;
+    }
+
+    // connections
+    for (let i = 0; i < particles.length; i++){
+      for (let j = i + 1; j < particles.length; j++){
+        const a = particles[i], b = particles[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 130){
+          ctx.strokeStyle = `rgba(120,170,255,${0.09 * (1 - dist/130)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // dots
+    for (const p of particles){
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(148,197,255,0.5)';
+      ctx.fill();
+    }
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+</script>
+
+</body>
+</html>
